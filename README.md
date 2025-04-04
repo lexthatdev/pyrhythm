@@ -100,13 +100,14 @@ your pyrhythm folder should look like this:
 ## 🎮 how to play
 
 1. open a terminal in the project folder  
-2. run the game with:
+2. run the game with either a shortcut or the select_a_song.bat file!
+3. here is an example of a shortcut command:
 
 ```bash
-python pyrhythm.py
+cmd.exe /k (path_to_your_batfile)
 ```
 
-3. use your keybinds (default: `f`, `j`, `d`, `k`) to hit the notes  
+3. use your keybinds (default: `w`, `a`, `s`, `d`) to hit the notes  
 4. try to full combo and flex your score 🤓
 
 ---

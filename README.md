@@ -11,13 +11,14 @@ before you jam out, make sure you have:
 
 - python **3.13.2** 👉 (get it from the microsoft store or [official site](https://www.python.org))
 - the following python modules:
+  - `pygame`
   - `moviepy`
   - `configparser`
 
 install them by running this in your terminal:
 
 ```bash
-pip install moviepy configparser
+pip install pygame moviepy configparser
 ```
 
 ---

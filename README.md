@@ -1,6 +1,6 @@
 # 🎵 pyrhythm
 
-a rhythm game made entirely with python 🐍  
+a rhythm game inspired by **friday night funkin'**, made entirely with python 🐍  
 hit notes, vibe to music videos, and play with custom charts and songs 🎶
 
 ---

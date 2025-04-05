@@ -18,7 +18,7 @@ before you jam out, make sure you have:
 install them by running this in your terminal:
 
 ```bash
-pip install pygame moviepy configparser
+pip install pygame moviepy==1.0.3 configparser
 ```
 
 ---

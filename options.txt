@@ -5,14 +5,14 @@ show_musicvid=True
 quit_oncomplete=True
 autoplay=False
 
-version=pre-alpha 1.7.4
+version=pre-alpha 1.7.5
 username=You
 
 [KEYBINDS]
 left=K_w
-right=K_d
-up=K_s
 down=K_a
+up=K_s
+right=K_d
 quit=K_DELETE
 
 [COLORS]

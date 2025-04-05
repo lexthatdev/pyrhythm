@@ -10,11 +10,11 @@ import configparser
 
 # terminal print colors
 TERMINAL_COLORS = {
-    "perfect": "\033[95m",  # magenta
-    "good": "\033[92m",     # green
-    "meh": "\033[94m",      # blue
-    "shit": "\033[93m",     # yellow
-    "miss": "\033[91m",     # red
+    "perfect": "\033[95m",
+    "good": "\033[92m",
+    "meh": "\033[94m",
+    "shit": "\033[93m",
+    "miss": "\033[91m",
     "reset": "\033[0m"
 }
 
@@ -81,7 +81,6 @@ if "KEYBINDS" in config:
         key_name = config["KEYBINDS"][action]
         keys[action] = getattr(pygame, key_name, None)
 
-# fallback keys
 default_keys = {"left": pygame.K_LEFT, "down": pygame.K_DOWN, "up": pygame.K_UP, "right": pygame.K_RIGHT, "quit": pygame.K_ESCAPE}
 for action in default_keys:
     if action not in keys or keys[action] is None:
@@ -97,6 +96,7 @@ if custom_colors and "COLORS" in config:
             pass
 
 # note sprites
+autoplay_sprite_path = os.path.join(misc_dir, 'sprites', 'autoplay.png')
 note_sprites = {}
 hitbox_sprites = {}
 sprite_paths = config["SPRITES"] if "SPRITES" in config else {}
@@ -117,22 +117,35 @@ if sprite_notes:
                 note_sprites[direction] = pygame.image.load(full_path)
                 hitbox_sprites[direction] = pygame.image.load(full_path.replace(".png", "_hitbox.png"))
 
+# judgment sprites
+judgment_sprites = {}
+for j in ["perfect", "good", "meh", "shit", "miss"]:
+    try:
+        img_path = os.path.join(misc_dir, "sprites", f"{j}.png")
+        judgment_sprites[j] = pygame.image.load(img_path)
+    except:
+        pass
+
 # game vars
 SPEED = 300
 HIT_WINDOW = 500
 x_positions = {"left": 200, "down": 300, "up": 400, "right": 500}
 notes = [{"time": note["time"] * 1000, "type": note["type"], "y": -50} for note in chart_data]
 
-# scoring
 combo = 0
 max_combo = 0
 results = {"perfect": 0, "good": 0, "meh": 0, "shit": 0, "miss": 0}
 hit_flash = {}
+note_pulses = []
+judgment_pulses = []
 
-font = pygame.font.SysFont("Comic Sans MS", 80, bold=True)
+font = pygame.font.SysFont("Comic Sans MS", 40, bold=True)
+luh_font = pygame.font.SysFont("Comic Sans MS", 20, bold=True)
+big_font = pygame.font.SysFont("Comic Sans MS", 80, bold=True)
+
 for i in range(3, 0, -1):
     screen.fill((0, 0, 0))
-    text_surface = font.render(str(i), True, (255, 255, 255))
+    text_surface = big_font.render(str(i), True, (255, 255, 255))
     screen.blit(text_surface, (WIDTH//2 - text_surface.get_width()//2, HEIGHT//2 - text_surface.get_height()//2))
     pygame.display.flip()
     time.sleep(1)
@@ -164,6 +177,15 @@ while running:
     bar_surface.fill((0, 0, 0, 150))
     screen.blit(bar_surface, (bar_x, bar_y))
 
+    # draw score + miss counter
+    score = results["perfect"] * 100 + results["good"] * 70 + results["meh"] * 50 + results["shit"] * 20
+    score_surf = luh_font.render(f"score: {score}", True, (255, 255, 255))
+    misses_surf = luh_font.render(f"misses: {results['miss']}", True, (255, 100, 100))
+    combo_surf = luh_font.render(f"combo: {combo}", True, (255, 255, 255))
+    screen.blit(misses_surf, (bar_x + 20, 10))
+    screen.blit(score_surf, (bar_x + 20, 27))
+    screen.blit(combo_surf, (bar_x + 20, 44))
+
     for key in x_positions:
         marker_x = bar_x + (bar_width - 50) // 2 + x_positions[key] - 344
         marker_y = bar_height - 80
@@ -190,27 +212,37 @@ while running:
                     diff = abs(note["time"] - current_time)
                     if diff <= HIT_WINDOW and event.key == keys.get(note["type"]):
                         key = note["type"]
+                        result = "miss"
                         if diff <= WINDOWS["perfect"]:
-                            results["perfect"] += 1
-                            combo += 1
+                            result = "perfect"
                         elif diff <= WINDOWS["good"]:
-                            results["good"] += 1
-                            combo += 1
+                            result = "good"
                         elif diff <= WINDOWS["meh"]:
-                            results["meh"] += 1
-                            combo += 1
+                            result = "meh"
                         elif diff <= WINDOWS["shit"]:
-                            results["shit"] += 1
-                            combo = 0
-                        else:
-                            continue
+                            result = "shit"
+
+                        results[result] += 1
+                        combo = 0 if result == "shit" else combo + 1
                         if combo > max_combo:
                             max_combo = combo
                         hit_flash[key] = pygame.time.get_ticks()
+                        
+                        note_x = bar_x + (bar_width - 50) // 2 + x_positions[key] - 344
+                        note_y = bar_height - 80
+                        note_pulses.append({"pos": (note_x, note_y), "start": pygame.time.get_ticks()})
+
                         notes.remove(note)
+
+                        if result in judgment_sprites:
+                            judgment_pulses.append({"image": judgment_sprites[result], "start": current_time})
                         break
 
     if autoplay:
+        autoplay_sprite = pygame.image.load(autoplay_sprite_path)
+        if (pygame.time.get_ticks() // 1000) % 2 == 0:  # flashes every 500ms
+            screen.blit(autoplay_sprite, (10, HEIGHT - autoplay_sprite.get_height() - 10))
+
         for note in notes[:]:
             if abs(note["time"] - current_time) <= WINDOWS["perfect"]:
                 key = note["type"]
@@ -219,7 +251,14 @@ while running:
                 if combo > max_combo:
                     max_combo = combo
                 hit_flash[key] = pygame.time.get_ticks()
+                
+                note_x = bar_x + (bar_width - 50) // 2 + x_positions[key] - 344
+                note_y = bar_height - 80
+                note_pulses.append({"pos": (note_x, note_y), "start": pygame.time.get_ticks()})
+                
                 notes.remove(note)
+                if "perfect" in judgment_sprites:
+                    judgment_pulses.append({"image": judgment_sprites["perfect"], "start": current_time})
 
     for note in notes[:]:
         note["y"] = (note["time"] - current_time) / 1000 * SPEED
@@ -227,6 +266,8 @@ while running:
             results["miss"] += 1
             notes.remove(note)
             combo = 0
+            if "miss" in judgment_sprites:
+                judgment_pulses.append({"image": judgment_sprites["miss"], "start": current_time})
             continue
 
         note_x = bar_x + (bar_width - 50) // 2 + x_positions[note["type"]] - 344
@@ -237,6 +278,34 @@ while running:
         else:
             pygame.draw.rect(screen, colors[note["type"]], (note_x, note_y, 50, 50))
             pygame.draw.rect(screen, (255, 255, 255), (note_x, note_y, 50, 50), 1)
+
+    # draw pulse effects
+    pulse_duration = 300  # ms
+    for pulse in note_pulses[:]:
+        elapsed = pygame.time.get_ticks() - pulse["start"]
+        if elapsed > pulse_duration:
+            note_pulses.remove(pulse)
+            continue
+
+        alpha = max(255 - int(255 * (elapsed / pulse_duration)), 0)
+        size = int(50 + 50 * (elapsed / pulse_duration))
+        surf = pygame.Surface((size, size), pygame.SRCALPHA)
+        pygame.draw.rect(surf, (255, 255, 255, alpha), (0, 0, size, size))
+        screen.blit(surf, (pulse["pos"][0] + 25 - size // 2, pulse["pos"][1] + 25 - size // 2))
+
+    # draw judgment pulses
+    for pulse in judgment_pulses[:]:
+        elapsed = current_time - pulse["start"]
+        if elapsed > 300:
+            judgment_pulses.remove(pulse)
+            continue
+        scale = 1.5 + 0.75 * (elapsed / 300)
+        alpha = max(0, 255 - (elapsed / 300) * 255)
+        image = pygame.transform.rotozoom(pulse["image"], 0, scale)
+        image.set_alpha(alpha)
+        img_rect = image.get_rect()
+        img_rect.center = (bar_x - 240, HEIGHT // 2)
+        screen.blit(image, img_rect)
 
     pygame.display.flip()
     clock.tick(60)

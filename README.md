@@ -1,7 +1,7 @@
 # 🎵 pyrhythm
 
 a rhythm game inspired by **friday night funkin'**, made entirely with python 🐍  
-hit notes, vibe to music videos, and play with custom charts and songs 🎶
+hit notes, jam to music videos, and play with custom charts and songs 🎶
 
 ---
 
@@ -138,8 +138,4 @@ cmd.exe /k (path_to_your_batfile)
 this project is open source and licensed under the **mit license**  
 feel free to fork it, remix it, make your own mod or skin 🎨  
 game coded with 💙 using `pygame`, `moviepy`, and `configparser`  
-special thanks to everyone who vibes with rhythm games 🔊
-
----
-
-*press start to vibe 🎮*
+special thanks to everyone who loves rhythm games 🔊
